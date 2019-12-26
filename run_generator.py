@@ -72,10 +72,8 @@ def generate_images(network_pkl, seeds, truncation_psi):
         model.eval()
 
         score = predict(pil_image, model)
-        score_range = str(round(score, 1))
 
-        os.makedirs(dnnlib.make_run_dir_path('{}'.format(score_range)))
-        pil_image.save(dnnlib.make_run_dir_path('{}/{}_{}.png'.format(score_range, score, seed)))
+        pil_image.save(dnnlib.make_run_dir_path('{}_{}.png'.format(score, seed)))
 
 #----------------------------------------------------------------------------
 
