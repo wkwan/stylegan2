@@ -14,7 +14,34 @@ import sys
 
 import pretrained_networks
 
+import argparse
+import torch
+import torchvision.models
+import torchvision.transforms as transforms
+from PIL import Image
+import json
+
 #----------------------------------------------------------------------------
+
+def prepare_image(image):
+    if image.mode != 'RGB':
+        image = image.convert("RGB")
+    Transform = transforms.Compose([
+        transforms.Resize([224, 224]),
+        transforms.ToTensor(),
+    ])
+    image = Transform(image)
+    image = image.unsqueeze(0)
+    return image
+
+
+def predict(image, model):
+    image = prepare_image(image)
+    with torch.no_grad():
+        preds = model(image)
+    score = preds.detach().numpy().item()
+    print('Popularity score: ' + str(round(score, 10)))
+    return str(round(score, 10))
 
 def generate_images(network_pkl, seeds, truncation_psi):
     print('Loading networks from "%s"...' % network_pkl)
@@ -33,7 +60,20 @@ def generate_images(network_pkl, seeds, truncation_psi):
         z = rnd.randn(1, *Gs.input_shape[1:]) # [minibatch, component]
         tflib.set_vars({var: rnd.randn(*var.shape.as_list()) for var in noise_vars}) # [height, width]
         images = Gs.run(z, None, **Gs_kwargs) # [minibatch, height, width, channel]
-        PIL.Image.fromarray(images[0], 'RGB').save(dnnlib.make_run_dir_path('seed%04d.png' % seed))
+
+        pil_image = PIL.Image.fromarray(images[0], 'RGB')
+
+                # Instagram popularity prediction
+        model = torchvision.models.resnet50()
+        # model.avgpool = nn.AdaptiveAvgPool2d(1) # for any size of the input
+        model.fc = torch.nn.Linear(in_features=2048, out_features=1)
+        model.load_state_dict(torch.load('model/model-resnet50.pth'))
+        model.eval()
+
+        score = predict(pil_image, model)
+        score_range = str(round(score, 1))
+
+        pil_image.save(dnnlib.make_run_dir_path('{}/{}_{}.png'.format(score_range, score, seed)))
 
 #----------------------------------------------------------------------------
 
