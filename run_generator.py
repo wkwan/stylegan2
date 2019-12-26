@@ -40,7 +40,6 @@ def predict(image, model):
     with torch.no_grad():
         preds = model(image)
     score = preds.detach().numpy().item()
-    print('Popularity score: ' + str(round(score, 10)))
     return str(round(score, 10))
 
 def generate_images(network_pkl, seeds, truncation_psi):
