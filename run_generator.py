@@ -40,7 +40,7 @@ def predict(image, model):
     with torch.no_grad():
         preds = model(image)
     score = preds.detach().numpy().item()
-    return str(round(score, 10))
+    return round(score, 10)
 
 def generate_images(network_pkl, seeds, truncation_psi):
     print('Loading networks from "%s"...' % network_pkl)
